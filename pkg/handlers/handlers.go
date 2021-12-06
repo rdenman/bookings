@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/rdenman/bookings/pkg/config"
@@ -28,7 +31,7 @@ func NewHandlers(r *Repository) {
 func (m *Repository) Home(w http.ResponseWriter, req *http.Request) {
 	remoteIP := req.RemoteAddr
 	m.App.Session.Put(req.Context(), "remote_ip", remoteIP)
-	render.RenderTemplate(w, "home.page.tmpl", &models.TemplateData{})
+	render.RenderTemplate(w, req, "home.page.tmpl", &models.TemplateData{})
 }
 
 // About is the about page handler
@@ -39,5 +42,47 @@ func (m *Repository) About(w http.ResponseWriter, req *http.Request) {
 	remoteIP := m.App.Session.GetString(req.Context(), "remote_ip")
 	stringMap["remote_ip"] = remoteIP
 
-	render.RenderTemplate(w, "about.page.tmpl", &models.TemplateData{StringMap: stringMap})
+	render.RenderTemplate(w, req, "about.page.tmpl", &models.TemplateData{StringMap: stringMap})
+}
+
+func (m *Repository) Reservation(w http.ResponseWriter, req *http.Request) {
+	render.RenderTemplate(w, req, "make-reservation.page.tmpl", &models.TemplateData{})
+}
+
+func (m *Repository) Generals(w http.ResponseWriter, req *http.Request) {
+	render.RenderTemplate(w, req, "generals.page.tmpl", &models.TemplateData{})
+}
+
+func (m *Repository) Majors(w http.ResponseWriter, req *http.Request) {
+	render.RenderTemplate(w, req, "majors.page.tmpl", &models.TemplateData{})
+}
+
+func (m *Repository) Availability(w http.ResponseWriter, req *http.Request) {
+	render.RenderTemplate(w, req, "search-availability.page.tmpl", &models.TemplateData{})
+}
+
+func (m *Repository) PostAvailability(w http.ResponseWriter, req *http.Request) {
+	start := req.Form.Get("start")
+	end := req.Form.Get("end")
+	w.Write([]byte(fmt.Sprintf("start date is %s and end date is %s", start, end)))
+}
+
+type jsonResponse struct {
+	OK      bool `json:"ok"`
+	Message string `json:"message"`
+}
+
+func (m *Repository) AvailabilityJSON(w http.ResponseWriter, req *http.Request) {
+	res := jsonResponse{OK:true, Message:"Available!"}
+	out, err := json.MarshalIndent(res, "", "     ")
+	if err != nil {
+		log.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}
+
+func (m *Repository) Contact(w http.ResponseWriter, req *http.Request) {
+	render.RenderTemplate(w, req, "contact.page.tmpl", &models.TemplateData{})
 }
