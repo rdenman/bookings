@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/rdenman/bookings/internal/config"
+	"github.com/rdenman/bookings/internal/forms"
 	"github.com/rdenman/bookings/internal/models"
 	"github.com/rdenman/bookings/internal/render"
 )
@@ -46,7 +47,44 @@ func (m *Repository) About(w http.ResponseWriter, req *http.Request) {
 }
 
 func (m *Repository) Reservation(w http.ResponseWriter, req *http.Request) {
-	render.RenderTemplate(w, req, "make-reservation.page.tmpl", &models.TemplateData{})
+	var emptyReservation models.Reservation
+	data := make(map[string]interface{})
+	data["reservation"] = emptyReservation
+	render.RenderTemplate(w, req, "make-reservation.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+		Data: data,
+	})
+}
+
+func (m *Repository) PostReservation(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	reservation := models.Reservation{
+		FirstName: req.Form.Get("first_name"),
+		LastName:  req.Form.Get("last_name"),
+		Email:     req.Form.Get("email"),
+		Phone:     req.Form.Get("phone"),
+	}
+
+	form := forms.New(req.PostForm)
+
+	form.Required("first_name", "last_name", "email")
+	form.MinLength("first_name", 3, req)
+
+	if !form.Valid() {
+		data := make(map[string]interface{})
+		data["reservation"] = reservation
+
+		render.RenderTemplate(w, req, "make-reservation.page.tmpl", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
 }
 
 func (m *Repository) Generals(w http.ResponseWriter, req *http.Request) {
