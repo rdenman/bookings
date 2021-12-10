@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rdenman/bookings/pkg/config"
-	"github.com/rdenman/bookings/pkg/models"
-	"github.com/rdenman/bookings/pkg/render"
+	"github.com/rdenman/bookings/internal/config"
+	"github.com/rdenman/bookings/internal/models"
+	"github.com/rdenman/bookings/internal/render"
 )
 
 var Repo *Repository
