@@ -74,6 +74,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, req *http.Request) {
 
 	form.Required("first_name", "last_name", "email")
 	form.MinLength("first_name", 3, req)
+	form.IsEmail("email")
 
 	if !form.Valid() {
 		data := make(map[string]interface{})
@@ -85,6 +86,9 @@ func (m *Repository) PostReservation(w http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	m.App.Session.Put(req.Context(), "reservation", reservation)
+	http.Redirect(w, req, "/reservation-summary", http.StatusSeeOther)
 }
 
 func (m *Repository) Generals(w http.ResponseWriter, req *http.Request) {
@@ -123,4 +127,22 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, req *http.Request) 
 
 func (m *Repository) Contact(w http.ResponseWriter, req *http.Request) {
 	render.RenderTemplate(w, req, "contact.page.tmpl", &models.TemplateData{})
+}
+
+func (m *Repository) ReservationSummary(w http.ResponseWriter, req *http.Request) {
+	reservation, ok := m.App.Session.Get(req.Context(), "reservation").(models.Reservation)
+	if !ok {
+		log.Println("cannot get item from session")
+		m.App.Session.Put(req.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, req, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	m.App.Session.Remove(req.Context(), "reservation")
+	data := make(map[string]interface{})
+	data["reservation"] = reservation
+
+	render.RenderTemplate(w, req, "reservation-summary.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
 }
